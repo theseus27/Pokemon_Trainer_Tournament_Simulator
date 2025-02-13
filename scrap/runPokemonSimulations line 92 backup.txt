@@ -1,0 +1,27 @@
+# Process the first group of builds
+            write_builds_to_file(trainer_lines, matchup[0], f"./WorkerFiles/{threadNo}1.txt", None) # trainer is always first in the matchup
+            # Process the second group of builds
+            write_builds_to_file(pokemon_lines, [matchup[1]], f"./WorkerFiles/{threadNo}2.txt", setLevel) # pokemon is always second in the matchup
+            while True:
+                try:
+                    mycommand = "cd ../pokemon-showdown && node ./dist/sim/examples/Simulation-test-1 " + threadNo + " " + str(team1No) + " " + str(team2No)
+                    result = subprocess.getoutput(mycommand)
+                    print("Result in loop: " + str(result))
+                except Exception as e:
+                    print("Exception on 102: " + str(e))
+                # if the battle fails we retry, sometimes showdown fails for some unexpected reason
+                try:
+                    if not (result.startswith("node:internal") or result.startswith("TypeError") or result.startswith("runtime")) or result.endswith("Node.js v21.6.1"):
+                        if not (result[:40].split("\n")[2].startswith("TypeError")):
+                            break
+                except Exception as e:
+                    print(e)
+                    break
+            
+            print("Result: " + str(result))               
+            if result.endswith("|win|Bot 2"):
+                points += 1
+
+            output_result += result + "\n]]]]]\n"
+
+        scores.append(points / len(matchups))

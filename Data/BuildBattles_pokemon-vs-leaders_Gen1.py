@@ -301,7 +301,8 @@ for trainer in leader_teams.keys():
 
 # Write the matchups to the output JSON file
 random.shuffle(finalMatchups)
-Output = IdealMatchups + finalMatchups
+# Output = IdealMatchups + finalMatchups
+Output = finalMatchups[:10]
 print(len(Output))
 
 with open('Inputs/tournament_battles.json', 'w') as file:

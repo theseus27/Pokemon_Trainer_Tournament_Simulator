@@ -28,37 +28,64 @@ leader_level_caps = {
 }
 
 def write_builds_to_file(lines, build_indices, file_path, setLevel):
-    with open(file_path, "w") as f:
-        f.truncate(0)  # Clear the file
-        for build_index in build_indices:
-            # Initialize build_start to the line with "Level: "
-            build_start = build_index[1]
-            # Move backwards to find the line with the '|' character
-            while build_start > 0 and not lines[build_start].startswith('|'):
-                build_start -= 1
-            # Now build_start should be on the line with the '|' character
-            # Include the line with '|', removing the '|' character itself.
-            f.write(lines[build_start].replace("|", "").strip() + "\n")
-            # Write each subsequent line of the build until another '|' is encountered
-            for line in lines[build_start + 1:]:
-                if line.startswith('|'):
-                    break  # If it's the start of the next build, stop writing
-                if setLevel is not None and line.startswith("Level: "):
-                    line = f"Level: {setLevel}\n" # Check if setLevel is not None and if the line starts with "Level: "
-                f.write(line)
-            f.write("\n")  # Add a newline to separate builds
+    print("Calling write_builds_to_file")
+    print("Lines: " + str(lines))
+    print("build_indicies: " + str(build_indices))
+    print("file_path: " + str(file_path))
+    print("setLevel: " + str(setLevel))
+    try:
+        with open(file_path, "w") as f:
+            f.truncate(0)  # Clear the file
+            for build_index in build_indices:
+                print("build_index: " + str(build_index))
+                # Initialize build_start to the line with "Level: "
+                build_start = build_index[1]
+                print("build_start: " + str(build_start))
+                # Move backwards to find the line with the '|' character
+                while build_start > 0 and not lines[build_start].startswith('|'):
+                    build_start -= 1
+                # Now build_start should be on the line with the '|' character
+                # Include the line with '|', removing the '|' character itself.
+                print("New build_start: " + str(build_start))
+                f.write(lines[build_start].replace("|", "").strip() + "\n")
+                # Write each subsequent line of the build until another '|' is encountered
+                print("Write lines 1")
+                for line in lines[build_start + 1:]:
+                    if line.startswith('|'):
+                        break  # If it's the start of the next build, stop writing
+                    if setLevel is not None and line.startswith("Level: "):
+                        line = f"Level: {setLevel}\n" # Check if setLevel is not None and if the line starts with "Level: "
+                    f.write(line)
+                print("Finished writing lines")
+                f.write("\n")  # Add a newline to separate builds
+    except IndexError as e:
+        print("IndexError on 53: " + str(e))
+        raise
+    except Exception as e:
+        print("Exception on 56: " + str(e))
+        raise
 
 # =============================================================================
 # Runs a single simulation for some matchup passed in
 # =============================================================================
 def runSimulation(matchups, threadNo, trainer_lines, pokemon_lines, teamNumbers, leader_teamNumbers, setLevel):
-    # print("Running simulation on", threadNo)
+    # print("Running simulation on thread #", threadNo)
     global teams
     global results
     global builds
     global noErase
     global ErasingMatchups
     leader = get_keys_from_value(teamNumbers, matchups[-1][0])[0]
+
+    try:
+        if leader == None:
+            print("\nLeader is null")
+        else:
+            print("\nRunning simulation with " + leader)
+    except Exception as e:
+        print("Exception on 77: " + e)
+        raise
+
     setLevel = leader_level_caps[leader]
     score = 0
     output_result = ""
@@ -75,24 +102,33 @@ def runSimulation(matchups, threadNo, trainer_lines, pokemon_lines, teamNumbers,
             # get number of each team from the teamNumbers dict
             team1No = get_keys_from_value(teamNumbers, matchup[0])[0]
             team2No = get_keys_from_value(teamNumbers, [matchup[1]])[0]
+            print(str(team1No) + " vs " + str(team2No))
 
             game = str(len(matchup[0])) + "v" + str(len(matchup[1]))
 
-            # Process the first group of builds
-            write_builds_to_file(trainer_lines, matchup[0], f"./WorkerFiles/{threadNo}1.txt", None) # trainer is always first in the matchup
-            # Process the second group of builds
-            write_builds_to_file(pokemon_lines, [matchup[1]], f"./WorkerFiles/{threadNo}2.txt", setLevel) # pokemon is always second in the matchup
+            try:
+                # Process the first group of builds
+                write_builds_to_file(trainer_lines, matchup[0], f"./WorkerFiles/{threadNo}1.txt", None) # trainer is always first in the matchup
+                # Process the second group of builds
+                write_builds_to_file(pokemon_lines, [matchup[1]], f"./WorkerFiles/{threadNo}2.txt", setLevel) # pokemon is always second in the matchup
+            except Exception as e:
+                break
+                # print("Exception on 98: " + str(e))
+
             while True:
                 mycommand = "cd ../pokemon-showdown && node ./dist/sim/examples/Simulation-test-1 " + threadNo + " " + str(team1No) + " " + str(team2No)
                 result = subprocess.getoutput(mycommand)
+                print("Result in loop: " + str(result))
                 # if the battle fails we retry, sometimes showdown fails for some unexpected reason
                 if not (result.startswith("node:internal") or result.startswith("TypeError") or result.startswith("runtime")) or result.endswith("Node.js v21.6.1"):
                     try:
                         if not (result[:40].split("\n")[2].startswith("TypeError")):
                             break
-                    except:
+                    except Exception as e:
+                        print(e)
                         break
 
+            print("Result: " + str(result))               
             if result.endswith("|win|Bot 2"):
                 points += 1
 
@@ -100,6 +136,7 @@ def runSimulation(matchups, threadNo, trainer_lines, pokemon_lines, teamNumbers,
 
         scores.append(points / len(matchups))
         score = sum(scores) / len(scores)
+        print("Score: " + str(score))
         if score < 1:
             break
 
@@ -135,7 +172,7 @@ def runSimulation(matchups, threadNo, trainer_lines, pokemon_lines, teamNumbers,
                 noErase[leader_str].append(pokemon_species)
                 ErasingMatchups = False
 
-    # print("finished running simulation on", threadNo)
+    print("Finished running simulation on", threadNo)
     return(teams)
     
 def get_keys_from_value(d, val):
@@ -174,13 +211,15 @@ leader_teams = {
 }
 leader_teamNumbers = {k: v for k, v in teamNumbers.items() if any(k.startswith(name) for name in leader_teams.keys())}
 
-print(len(teams))
 setLevel = None # If not None, all pokemon will be set to this level
 n = 2000 # number of battles to stop running after
 # teams = teams[:n] # comment this out to simulate all battles
 
 n = len(teams)
 noOfTeams = len(teamNumbers)
+
+print("n: " + str(n))
+print("noOfTeams: " + str(noOfTeams))
 
 with open ("./output.txt", "a") as o: 
     o.truncate(0)
@@ -232,6 +271,7 @@ with open(pokemon_filename) as f2:
 
 # Function to submit simulations and manage thread names
 def submit_simulation(executor, team):
+    # print("Calling submit_simulation()")
     global simulation_counter
     global simulations_since_last_update
     with condition:  # Use condition variable to wait for an available thread name
@@ -297,9 +337,10 @@ def submit_simulation(executor, team):
     # Submit the task
     future = executor.submit(runSimulation, team, thread_name, trainer_lines, pokemon_lines, teamNumbers, leader_teamNumbers, setLevel)
     # Attach the callback to the future
+    # future.add_done_callback(lambda future: (print("Simulation completed"), release_thread_name(future)))
     future.add_done_callback(release_thread_name)
 
-print(len(teams))
+print("Initial len(teams): " + str(len(teams)))
 with ThreadPoolExecutor(max_workers=noOfThreads) as executor:
     while teams:
         with lock2:
@@ -308,8 +349,8 @@ with ThreadPoolExecutor(max_workers=noOfThreads) as executor:
                 # print("assigning teams", len(teams))
         submit_simulation(executor, team)
 
-print(len(teams))  # Keeping track of remaining teams
-print(results)  # For debugging or tracking progress
+print("\nRemaining len(teams): " + str(len(teams)))  # Keeping track of remaining teams
+print("Results: " + str(results))  # For debugging or tracking progress
     
 end = time.time()
 
@@ -324,11 +365,11 @@ for i in infiles:
     with open("./WorkerOutputs/" + i + ".txt", "w") as output:
         output.truncate(0)
 
-print(results)
+print("Results: " + str(results))
 with open(f"scores.json", "w") as file:
     json.dump(results, file, indent=4)
 
-print(builds)
+print("Builds: " + str(builds))
 with open(f"builds.json", "w") as file:
     json.dump(builds, file, indent=4)
 
@@ -341,7 +382,7 @@ for trainer, pokemons in results.items():
         pokemon_scores[pokemon]['count'] += 1
 average_scores = {pokemon: {'score': info['total_score'], 'average_score': info['total_score'] / info['count']} for pokemon, info in pokemon_scores.items()}
 
-print(average_scores)
+print("Average scores: " + str(average_scores))
 with open(f"average_scores.json", "w") as file:
     json.dump(average_scores, file, indent=4)
             
