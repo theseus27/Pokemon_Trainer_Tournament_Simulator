@@ -69,13 +69,20 @@ def write_builds_to_file(lines, build_indices, file_path, setLevel):
 # Runs a single simulation for some matchup passed in
 # =============================================================================
 def runSimulation(matchups, threadNo, trainer_lines, pokemon_lines, teamNumbers, leader_teamNumbers, setLevel):
-    # print("Running simulation on thread #", threadNo)
+    print("\nRunning simulation on thread #", threadNo)
+    print(matchups)
     global teams
     global results
     global builds
     global noErase
     global ErasingMatchups
-    leader = get_keys_from_value(teamNumbers, matchups[-1][0])[0]
+
+    try:
+        leader = get_keys_from_value(teamNumbers, matchups[-1][0])[0]
+        print("Leader: " + str(leader))
+    except Exception as e:
+        print("Exception on 83: " + e)
+        raise
 
     try:
         if leader == None:
@@ -178,16 +185,16 @@ def runSimulation(matchups, threadNo, trainer_lines, pokemon_lines, teamNumbers,
 def get_keys_from_value(d, val):
     return [k for k, v in d.items() if v == val]
 
-leaders_filename = "Inputs/" + "GymLeaderPokemon.txt"
-pokemon_filename = "Inputs/" + "PokemonBuilds.txt"    
+leaders_filename = "Inputs/Videos/Ranking Gen 1 Pokemon/" + "GymLeaderPokemon.txt"
+pokemon_filename = "Inputs/Videos/Ranking Gen 1 Pokemon/" + "PokemonBuilds.txt"    
 
 noOfThreads = 1 # Change this to fit your CPU
 
 #read in teams
-with open('Inputs/tournament_battles.json', 'r') as infile:
+with open('Inputs/Videos/Ranking Gen 1 Pokemon/tournament_battles.json', 'r') as infile:
     teams = json.load(infile)
 
-with open('Inputs/PokemonVsLeaderTeams.json', 'r') as infile:
+with open('Inputs/Videos/Ranking Gen 1 Pokemon/PokemonVsLeaderTeams.json', 'r') as infile:
     teamNumbers = json.load(infile)
 
 leader_teams = {

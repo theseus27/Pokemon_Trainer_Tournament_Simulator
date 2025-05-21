@@ -24,6 +24,6 @@ def generate_tournament_matchups(input_file, output_file):
 
 # Example usage:
 # generate_tournament_matchups('Inputs/tournament_battles/Badge7Battles.json', 'Inputs/tournament_battles.json')
-teams_file = "Inputs/GymLeaderTeams.json"
-outfile = "Inputs/tournament_battles.json"
+teams_file = "Inputs/Videos/Ranking Gen 1 Pokemon/GymLeaderTeams.json"
+outfile = "Inputs/Videos/Ranking Gen 1 Pokemon/tournament_battles.json"
 generate_tournament_matchups(teams_file, outfile)

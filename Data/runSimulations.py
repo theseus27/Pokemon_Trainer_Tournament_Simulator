@@ -9,6 +9,8 @@ import random
 from timeit import default_timer as timer
 from tqdm import tqdm, trange
 
+results = {}
+
 # ANSI color codes for styling
 COLORS = {
     "blue": "\033[94m",
@@ -44,6 +46,8 @@ def write_builds_to_file(lines, build_indices, file_path, setLevel):
 # Runs a single simulation for some matchup passed in
 # =============================================================================
 def runSimulation(matchup, threadNo, filename, teamNumbers, setLevel):
+    global results
+
     # get number of each team from the teamNumbers dict
     team1No = get_keys_from_value(teamNumbers, matchup[0])[0]
     team2No = get_keys_from_value(teamNumbers, matchup[1])[0]
@@ -61,6 +65,7 @@ def runSimulation(matchup, threadNo, filename, teamNumbers, setLevel):
             #mycommand = "cd ../pokemon-showdown && node build && node ./dist/sim/examples/battle-stream-example"
             mycommand = "cd ../pokemon-showdown && node ./dist/sim/examples/Simulation-test-1 " + threadNo + " " + str(team1No) + " " + str(team2No)
             result = subprocess.getoutput(mycommand)
+            results.append(result)
             # if the battle fails we retry, sometimes showdown fails for some unexpected reason
             if not (result.startswith("node:internal") or result.startswith("TypeError") or result.startswith("runtime") or re.search(r'Node\.js\s+v\d+\.\d+\.\d+$', result[-30:])):
                 try:
@@ -117,12 +122,12 @@ def runSimulation(matchup, threadNo, filename, teamNumbers, setLevel):
 
             # Uncomment if you want to display each individual fight result as it runs
                 # Note: may slow down total time to run sims
-            # tqdm.write(
-            #     f"{COLORS['yellow']}Finished Running Simulation{COLORS['reset']} "
-            #     f"{vs_line_colored} | "
-            #     f"Victor: "
-            #     f"{COLORS['green']}{victor}{COLORS['reset']}"
-            # )
+            tqdm.write(
+                f"{COLORS['yellow']}Finished Running Simulation{COLORS['reset']} "
+                f"{vs_line_colored} | "
+                f"Victor: "
+                f"{COLORS['green']}{victor}{COLORS['reset']}"
+            )
         
         except Exception as e:
             pass
@@ -131,17 +136,17 @@ def runSimulation(matchup, threadNo, filename, teamNumbers, setLevel):
 def get_keys_from_value(d, val):
     return [k for k, v in d.items() if v == val]
 
-filename = "Inputs/" + "GymLeaderPokemon.txt"
+filename = "Inputs/Videos/Ranking Gen 1 Pokemon/" + "GymLeaderPokemon.txt"
 noOfThreads = 1 # change this to fit your CPU
 RandomiseTeams = False # randomise order of simulations
 
 #read in teams
-with open('Inputs/tournament_battles.json', 'r') as infile:
+with open('Inputs/Videos/Ranking Gen 1 Pokemon/tournament_battles.json', 'r') as infile:
     teams = json.load(infile)
 if RandomiseTeams:
     random.shuffle(teams)
 
-with open('Inputs/GymLeaderTeams.json', 'r') as infile:
+with open('Inputs/Videos/Ranking Gen 1 Pokemon/GymLeaderTeams.json', 'r') as infile:
     teamNumbers = json.load(infile)
 
 print(len(teams))
@@ -260,3 +265,4 @@ for i in infiles:
             
 print("ran in " + str(end-start) + " Seconds Overall")
 print(str((end - start)/n) + " Seconds Per Sim On Average")
+print(results)
